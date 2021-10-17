@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-
+import { useEffect, useState, useCallback } from 'react';
 import { SideBar } from './components/SideBar';
 import { Content } from './components/Content';
 
@@ -10,26 +9,16 @@ import './styles/global.scss';
 import './styles/sidebar.scss';
 import './styles/content.scss';
 
-import { 
-  GenreResponseProps, 
-  MovieProps 
+import {
+  GenreResponseProps,
+  MovieProps
 } from './@types/Movie';
 
 export function App() {
   const [genres, setGenres] = useState<GenreResponseProps[]>([]);
   const [selectedGenreId, setSelectedGenreId] = useState(1);
   const [selectedGenre, setSelectedGenre] = useState<GenreResponseProps>({} as GenreResponseProps);
-  const [movies, setMovies] = useState<MovieProps[]>([]);
-
-  useEffect(() => {
-    api.get<MovieProps[]>(`movies/?Genre_id=${selectedGenreId}`).then(response => {
-      setMovies(response.data);
-    });
-
-    api.get<GenreResponseProps>(`genres/${selectedGenreId}`).then(response => {
-      setSelectedGenre(response.data);
-    })
-  }, [selectedGenreId]);
+  const [movies, setMovies] = useState<MovieProps[]>([]);  
 
   useEffect(() => {
     api.get<GenreResponseProps[]>('genres').then(response => {
@@ -37,17 +26,38 @@ export function App() {
     });
   }, []);
 
+  const data = useCallback(() => {
+
+    api.get<MovieProps[]>(`movies/?Genre_id=${selectedGenreId}`).then(response => {
+      setMovies(response.data);
+    });
+
+    api.get<GenreResponseProps>(`genres/${selectedGenreId}`).then(response => {
+      setSelectedGenre(response.data);
+    });
+
+  }, [selectedGenreId]);
+
+  useEffect(() => {  
+    data()
+  }, [selectedGenreId]);
+
+  const handleClickButton = useCallback((id: number) => {
+    setSelectedGenreId(id);
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
-      <SideBar 
+      <SideBar
         genres={genres}
-        setSelectedGenreId={setSelectedGenreId}
         selectedGenreId={selectedGenreId}
+        buttonClickCallback={handleClickButton}
       />
+
       <Content
-        movies={movies}
         selectedGenre={selectedGenre}
-      />      
+        movies={movies}
+      />
     </div>
   )
 }
